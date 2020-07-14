@@ -1,0 +1,16 @@
+{
+    "name": "Antilatency.Integration",
+    "references": [],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Android",
+        "Editor",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
