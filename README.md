@@ -1,7 +1,7 @@
 Custom environment demonstration
 ================================
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/CRgv1pismmo/0.jpg)](https://www.youtube.com/watch?v=CRgv1pismmo)
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/XAbDLjyo0A4/0.jpg)](https://www.youtube.com/watch?v=XAbDLjyo0A4)
 
 Prerequisites:
   - 3 IR LED markers to construct environment. Note that markers should not form self-similar pattern, such as equilateral triangle.
