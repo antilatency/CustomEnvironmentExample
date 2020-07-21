@@ -6,7 +6,7 @@ Custom environment demonstration
 [Video AntilatencyCustomEnvironmentDemo](https://www.youtube.com/watch?v=XAbDLjyo0A4 "https://www.youtube.com/watch?v=XAbDLjyo0A4")
 
 Prerequisites:
-  - 3 IR LED markers to construct the environment. Note that the markers should not form a regular shape, such as an equilateral triangle..
+  - 3 IR LED markers to construct the environment. Note that the markers should not form a regular shape, such as an equilateral triangle.
   - 1 Alt tracker.
 
 How to run:
