@@ -1,3 +1,13 @@
+//Copyright 2020, ALT LLC. All Rights Reserved.
+//This file is part of Antilatency SDK.
+//It is subject to the license terms in the LICENSE file found in the top-level directory
+//of this distribution and at http://www.antilatency.com/eula
+//You may not use this file except in compliance with the License.
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
 #pragma warning disable IDE1006 // Do not warn about naming style violations
 #pragma warning disable IDE0017 // Do not suggest to simplify object initialization
 using System.Runtime.InteropServices; //GuidAttribute
@@ -189,8 +199,8 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public IEnvironmentRemap() { }
-		public IEnvironmentRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public IEnvironmentRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
@@ -227,20 +237,25 @@ public partial struct Stage {
 [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
 public partial struct Stability {
 	public Antilatency.Alt.Tracking.Stage stage;
+	/// <summary>Meaning of value depends on stage. See Antilatency.Alt.Tracking.Stage</summary>
 	public float value;
 }
 
 [System.Serializable]
 [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
 public partial struct State {
+	/// <summary>World space position meters, local to world rotation</summary>
 	public UnityEngine.Pose pose;
+	/// <summary>World space, meters per second</summary>
 	public UnityEngine.Vector3 velocity;
+	/// <summary>Local space, radians per second</summary>
 	public UnityEngine.Vector3 localAngularVelocity;
+	/// <summary>Tracking stability</summary>
 	public Antilatency.Alt.Tracking.Stability stability;
 }
 
 [Guid("7f8b603c-fa91-4168-92b7-af1644d087db")]
-public interface ICotask : Antilatency.DeviceNetwork.ICotask {
+public interface ITrackingCotask : Antilatency.DeviceNetwork.ICotask {
 	/// <param name = "placement">
 	/// Position (meters) and orientation (quaternion) of tracker relative to origin of tracked object.
 	/// </param>
@@ -248,16 +263,16 @@ public interface ICotask : Antilatency.DeviceNetwork.ICotask {
 	/// Extrapolation time (seconds).
 	/// </param>
 	Antilatency.Alt.Tracking.State getExtrapolatedState(UnityEngine.Pose placement, float deltaTime);
-	Antilatency.Alt.Tracking.State getState();
+	Antilatency.Alt.Tracking.State getState(float angularVelocityAvgTimeInSeconds);
 }
 namespace Details {
-	public class ICotaskWrapper : Antilatency.DeviceNetwork.Details.ICotaskWrapper, ICotask {
-		private ICotaskRemap.VMT _VMT = new ICotaskRemap.VMT();
+	public class ITrackingCotaskWrapper : Antilatency.DeviceNetwork.Details.ICotaskWrapper, ITrackingCotask {
+		private ITrackingCotaskRemap.VMT _VMT = new ITrackingCotaskRemap.VMT();
 		protected new int GetTotalNativeMethodsCount() {
-		    return base.GetTotalNativeMethodsCount() + typeof(ICotaskRemap.VMT).GetFields().Length;
+		    return base.GetTotalNativeMethodsCount() + typeof(ITrackingCotaskRemap.VMT).GetFields().Length;
 		}
-		public ICotaskWrapper(System.IntPtr obj) : base(obj) {
-		    _VMT = LoadVMT<ICotaskRemap.VMT>(base.GetTotalNativeMethodsCount());
+		public ITrackingCotaskWrapper(System.IntPtr obj) : base(obj) {
+		    _VMT = LoadVMT<ITrackingCotaskRemap.VMT>(base.GetTotalNativeMethodsCount());
 		}
 		public Antilatency.Alt.Tracking.State getExtrapolatedState(UnityEngine.Pose placement, float deltaTime) {
 			Antilatency.Alt.Tracking.State result;
@@ -266,25 +281,25 @@ namespace Details {
 			result = resultMarshaler;
 			return result;
 		}
-		public Antilatency.Alt.Tracking.State getState() {
+		public Antilatency.Alt.Tracking.State getState(float angularVelocityAvgTimeInSeconds) {
 			Antilatency.Alt.Tracking.State result;
 			Antilatency.Alt.Tracking.State resultMarshaler;
-			HandleExceptionCode(_VMT.getState(_object, out resultMarshaler));
+			HandleExceptionCode(_VMT.getState(_object, angularVelocityAvgTimeInSeconds, out resultMarshaler));
 			result = resultMarshaler;
 			return result;
 		}
 	}
-	public class ICotaskRemap : Antilatency.DeviceNetwork.Details.ICotaskRemap {
+	public class ITrackingCotaskRemap : Antilatency.DeviceNetwork.Details.ICotaskRemap {
 		public new struct VMT {
 			public delegate Antilatency.InterfaceContract.ExceptionCode getExtrapolatedStateDelegate(System.IntPtr _this, UnityEngine.Pose placement, float deltaTime, out Antilatency.Alt.Tracking.State result);
-			public delegate Antilatency.InterfaceContract.ExceptionCode getStateDelegate(System.IntPtr _this, out Antilatency.Alt.Tracking.State result);
+			public delegate Antilatency.InterfaceContract.ExceptionCode getStateDelegate(System.IntPtr _this, float angularVelocityAvgTimeInSeconds, out Antilatency.Alt.Tracking.State result);
 			#pragma warning disable 0649
 			public getExtrapolatedStateDelegate getExtrapolatedState;
 			public getStateDelegate getState;
 			#pragma warning restore 0649
 		}
 		public new static readonly NativeInterfaceVmt NativeVmt;
-		static ICotaskRemap() {
+		static ITrackingCotaskRemap() {
 			var vmtBlocks = new System.Collections.Generic.List<object>();
 			AppendVmt(vmtBlocks);
 			NativeVmt = new NativeInterfaceVmt(vmtBlocks);
@@ -294,7 +309,7 @@ namespace Details {
 			var vmt = new VMT();
 			vmt.getExtrapolatedState = (System.IntPtr _this, UnityEngine.Pose placement, float deltaTime, out Antilatency.Alt.Tracking.State result) => {
 				try {
-					var obj = GetContext(_this) as ICotask;
+					var obj = GetContext(_this) as ITrackingCotask;
 					var resultMarshaler = obj.getExtrapolatedState(placement, deltaTime);
 					result = resultMarshaler;
 				}
@@ -304,10 +319,10 @@ namespace Details {
 				}
 				return Antilatency.InterfaceContract.ExceptionCode.Ok;
 			};
-			vmt.getState = (System.IntPtr _this, out Antilatency.Alt.Tracking.State result) => {
+			vmt.getState = (System.IntPtr _this, float angularVelocityAvgTimeInSeconds, out Antilatency.Alt.Tracking.State result) => {
 				try {
-					var obj = GetContext(_this) as ICotask;
-					var resultMarshaler = obj.getState();
+					var obj = GetContext(_this) as ITrackingCotask;
+					var resultMarshaler = obj.getState(angularVelocityAvgTimeInSeconds);
 					result = resultMarshaler;
 				}
 				catch (System.Exception ex) {
@@ -318,37 +333,37 @@ namespace Details {
 			};
 			buffer.Add(vmt);
 		}
-		public ICotaskRemap() { }
-		public ICotaskRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public ITrackingCotaskRemap() { }
+		public ITrackingCotaskRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
 
 [Guid("009ebfe1-f85c-4638-be9d-af7990a8cd04")]
-public interface ICotaskConstructor : Antilatency.DeviceNetwork.ICotaskConstructor {
-	Antilatency.Alt.Tracking.ICotask startTask(Antilatency.DeviceNetwork.INetwork network, Antilatency.DeviceNetwork.NodeHandle node, Antilatency.Alt.Tracking.IEnvironment environment);
+public interface ITrackingCotaskConstructor : Antilatency.DeviceNetwork.ICotaskConstructor {
+	Antilatency.Alt.Tracking.ITrackingCotask startTask(Antilatency.DeviceNetwork.INetwork network, Antilatency.DeviceNetwork.NodeHandle node, Antilatency.Alt.Tracking.IEnvironment environment);
 }
 namespace Details {
-	public class ICotaskConstructorWrapper : Antilatency.DeviceNetwork.Details.ICotaskConstructorWrapper, ICotaskConstructor {
-		private ICotaskConstructorRemap.VMT _VMT = new ICotaskConstructorRemap.VMT();
+	public class ITrackingCotaskConstructorWrapper : Antilatency.DeviceNetwork.Details.ICotaskConstructorWrapper, ITrackingCotaskConstructor {
+		private ITrackingCotaskConstructorRemap.VMT _VMT = new ITrackingCotaskConstructorRemap.VMT();
 		protected new int GetTotalNativeMethodsCount() {
-		    return base.GetTotalNativeMethodsCount() + typeof(ICotaskConstructorRemap.VMT).GetFields().Length;
+		    return base.GetTotalNativeMethodsCount() + typeof(ITrackingCotaskConstructorRemap.VMT).GetFields().Length;
 		}
-		public ICotaskConstructorWrapper(System.IntPtr obj) : base(obj) {
-		    _VMT = LoadVMT<ICotaskConstructorRemap.VMT>(base.GetTotalNativeMethodsCount());
+		public ITrackingCotaskConstructorWrapper(System.IntPtr obj) : base(obj) {
+		    _VMT = LoadVMT<ITrackingCotaskConstructorRemap.VMT>(base.GetTotalNativeMethodsCount());
 		}
-		public Antilatency.Alt.Tracking.ICotask startTask(Antilatency.DeviceNetwork.INetwork network, Antilatency.DeviceNetwork.NodeHandle node, Antilatency.Alt.Tracking.IEnvironment environment) {
-			Antilatency.Alt.Tracking.ICotask result;
+		public Antilatency.Alt.Tracking.ITrackingCotask startTask(Antilatency.DeviceNetwork.INetwork network, Antilatency.DeviceNetwork.NodeHandle node, Antilatency.Alt.Tracking.IEnvironment environment) {
+			Antilatency.Alt.Tracking.ITrackingCotask result;
 			System.IntPtr resultMarshaler;
 			var networkMarshaler = Antilatency.InterfaceContract.Details.InterfaceMarshaler.ManagedToNative<Antilatency.DeviceNetwork.INetwork>(network);
 			var environmentMarshaler = Antilatency.InterfaceContract.Details.InterfaceMarshaler.ManagedToNative<Antilatency.Alt.Tracking.IEnvironment>(environment);
 			HandleExceptionCode(_VMT.startTask(_object, networkMarshaler, node, environmentMarshaler, out resultMarshaler));
-			result = (resultMarshaler==System.IntPtr.Zero) ? null : new Antilatency.Alt.Tracking.Details.ICotaskWrapper(resultMarshaler);
+			result = (resultMarshaler==System.IntPtr.Zero) ? null : new Antilatency.Alt.Tracking.Details.ITrackingCotaskWrapper(resultMarshaler);
 			return result;
 		}
 	}
-	public class ICotaskConstructorRemap : Antilatency.DeviceNetwork.Details.ICotaskConstructorRemap {
+	public class ITrackingCotaskConstructorRemap : Antilatency.DeviceNetwork.Details.ICotaskConstructorRemap {
 		public new struct VMT {
 			public delegate Antilatency.InterfaceContract.ExceptionCode startTaskDelegate(System.IntPtr _this, System.IntPtr network, Antilatency.DeviceNetwork.NodeHandle node, System.IntPtr environment, out System.IntPtr result);
 			#pragma warning disable 0649
@@ -356,7 +371,7 @@ namespace Details {
 			#pragma warning restore 0649
 		}
 		public new static readonly NativeInterfaceVmt NativeVmt;
-		static ICotaskConstructorRemap() {
+		static ITrackingCotaskConstructorRemap() {
 			var vmtBlocks = new System.Collections.Generic.List<object>();
 			AppendVmt(vmtBlocks);
 			NativeVmt = new NativeInterfaceVmt(vmtBlocks);
@@ -366,11 +381,11 @@ namespace Details {
 			var vmt = new VMT();
 			vmt.startTask = (System.IntPtr _this, System.IntPtr network, Antilatency.DeviceNetwork.NodeHandle node, System.IntPtr environment, out System.IntPtr result) => {
 				try {
-					var obj = GetContext(_this) as ICotaskConstructor;
+					var obj = GetContext(_this) as ITrackingCotaskConstructor;
 					var networkMarshaler = network == System.IntPtr.Zero ? null : new Antilatency.DeviceNetwork.Details.INetworkWrapper(network);
 					var environmentMarshaler = environment == System.IntPtr.Zero ? null : new Antilatency.Alt.Tracking.Details.IEnvironmentWrapper(environment);
 					var resultMarshaler = obj.startTask(networkMarshaler, node, environmentMarshaler);
-					result = Antilatency.InterfaceContract.Details.InterfaceMarshaler.ManagedToNative<Antilatency.Alt.Tracking.ICotask>(resultMarshaler);
+					result = Antilatency.InterfaceContract.Details.InterfaceMarshaler.ManagedToNative<Antilatency.Alt.Tracking.ITrackingCotask>(resultMarshaler);
 				}
 				catch (System.Exception ex) {
 					result = default(System.IntPtr);
@@ -380,19 +395,19 @@ namespace Details {
 			};
 			buffer.Add(vmt);
 		}
-		public ICotaskConstructorRemap() { }
-		public ICotaskConstructorRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public ITrackingCotaskConstructorRemap() { }
+		public ITrackingCotaskConstructorRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
 
-[Guid("e7871523-f719-48e9-9891-07d1c9fb1e49")]
+[Guid("13ac393d-a7c5-4e51-a6eb-feaa11c3c049")]
 public interface ILibrary : Antilatency.InterfaceContract.IInterface {
 	Antilatency.Alt.Tracking.IEnvironment createEnvironment(string code);
 	UnityEngine.Pose createPlacement(string code);
-	Antilatency.Alt.Tracking.ICotaskConstructor getTrackingConstructor();
 	string encodePlacement(UnityEngine.Vector3 position, UnityEngine.Vector3 rotation);
+	Antilatency.Alt.Tracking.ITrackingCotaskConstructor createTrackingCotaskConstructor();
 }
 public static class Library{
     [DllImport("AntilatencyAltTracking")]
@@ -433,13 +448,6 @@ namespace Details {
 			result = resultMarshaler;
 			return result;
 		}
-		public Antilatency.Alt.Tracking.ICotaskConstructor getTrackingConstructor() {
-			Antilatency.Alt.Tracking.ICotaskConstructor result;
-			System.IntPtr resultMarshaler;
-			HandleExceptionCode(_VMT.getTrackingConstructor(_object, out resultMarshaler));
-			result = (resultMarshaler==System.IntPtr.Zero) ? null : new Antilatency.Alt.Tracking.Details.ICotaskConstructorWrapper(resultMarshaler);
-			return result;
-		}
 		public string encodePlacement(UnityEngine.Vector3 position, UnityEngine.Vector3 rotation) {
 			string result;
 			var resultMarshaler = Antilatency.InterfaceContract.Details.ArrayOutMarshaler.create();
@@ -448,18 +456,25 @@ namespace Details {
 			resultMarshaler.Dispose();
 			return result;
 		}
+		public Antilatency.Alt.Tracking.ITrackingCotaskConstructor createTrackingCotaskConstructor() {
+			Antilatency.Alt.Tracking.ITrackingCotaskConstructor result;
+			System.IntPtr resultMarshaler;
+			HandleExceptionCode(_VMT.createTrackingCotaskConstructor(_object, out resultMarshaler));
+			result = (resultMarshaler==System.IntPtr.Zero) ? null : new Antilatency.Alt.Tracking.Details.ITrackingCotaskConstructorWrapper(resultMarshaler);
+			return result;
+		}
 	}
 	public class ILibraryRemap : Antilatency.InterfaceContract.Details.IInterfaceRemap {
 		public new struct VMT {
 			public delegate Antilatency.InterfaceContract.ExceptionCode createEnvironmentDelegate(System.IntPtr _this, Antilatency.InterfaceContract.Details.ArrayInMarshaler.Intermediate code, out System.IntPtr result);
 			public delegate Antilatency.InterfaceContract.ExceptionCode createPlacementDelegate(System.IntPtr _this, Antilatency.InterfaceContract.Details.ArrayInMarshaler.Intermediate code, out UnityEngine.Pose result);
-			public delegate Antilatency.InterfaceContract.ExceptionCode getTrackingConstructorDelegate(System.IntPtr _this, out System.IntPtr result);
 			public delegate Antilatency.InterfaceContract.ExceptionCode encodePlacementDelegate(System.IntPtr _this, UnityEngine.Vector3 position, UnityEngine.Vector3 rotation, Antilatency.InterfaceContract.Details.ArrayOutMarshaler.Intermediate result);
+			public delegate Antilatency.InterfaceContract.ExceptionCode createTrackingCotaskConstructorDelegate(System.IntPtr _this, out System.IntPtr result);
 			#pragma warning disable 0649
 			public createEnvironmentDelegate createEnvironment;
 			public createPlacementDelegate createPlacement;
-			public getTrackingConstructorDelegate getTrackingConstructor;
 			public encodePlacementDelegate encodePlacement;
+			public createTrackingCotaskConstructorDelegate createTrackingCotaskConstructor;
 			#pragma warning restore 0649
 		}
 		public new static readonly NativeInterfaceVmt NativeVmt;
@@ -495,18 +510,6 @@ namespace Details {
 				}
 				return Antilatency.InterfaceContract.ExceptionCode.Ok;
 			};
-			vmt.getTrackingConstructor = (System.IntPtr _this, out System.IntPtr result) => {
-				try {
-					var obj = GetContext(_this) as ILibrary;
-					var resultMarshaler = obj.getTrackingConstructor();
-					result = Antilatency.InterfaceContract.Details.InterfaceMarshaler.ManagedToNative<Antilatency.Alt.Tracking.ICotaskConstructor>(resultMarshaler);
-				}
-				catch (System.Exception ex) {
-					result = default(System.IntPtr);
-					return handleRemapException(ex, _this);
-				}
-				return Antilatency.InterfaceContract.ExceptionCode.Ok;
-			};
 			vmt.encodePlacement = (System.IntPtr _this, UnityEngine.Vector3 position, UnityEngine.Vector3 rotation, Antilatency.InterfaceContract.Details.ArrayOutMarshaler.Intermediate result) => {
 				try {
 					var obj = GetContext(_this) as ILibrary;
@@ -518,11 +521,23 @@ namespace Details {
 				}
 				return Antilatency.InterfaceContract.ExceptionCode.Ok;
 			};
+			vmt.createTrackingCotaskConstructor = (System.IntPtr _this, out System.IntPtr result) => {
+				try {
+					var obj = GetContext(_this) as ILibrary;
+					var resultMarshaler = obj.createTrackingCotaskConstructor();
+					result = Antilatency.InterfaceContract.Details.InterfaceMarshaler.ManagedToNative<Antilatency.Alt.Tracking.ITrackingCotaskConstructor>(resultMarshaler);
+				}
+				catch (System.Exception ex) {
+					result = default(System.IntPtr);
+					return handleRemapException(ex, _this);
+				}
+				return Antilatency.InterfaceContract.ExceptionCode.Ok;
+			};
 			buffer.Add(vmt);
 		}
 		public ILibraryRemap() { }
-		public ILibraryRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public ILibraryRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
@@ -609,10 +624,14 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public IEnvironmentMutableRemap() { }
-		public IEnvironmentMutableRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public IEnvironmentMutableRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
+}
+
+public static partial class Constants {
+	public const float DefaultAngularVelocityAvgTime = 0.016f;
 }
 
 

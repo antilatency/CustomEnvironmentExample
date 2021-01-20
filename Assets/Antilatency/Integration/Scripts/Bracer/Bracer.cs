@@ -1,4 +1,15 @@
-﻿using System.Collections;
+﻿// Copyright 2020, ALT LLC. All Rights Reserved.
+// This file is part of Antilatency SDK.
+// It is subject to the license terms in the LICENSE file found in the top-level directory
+// of this distribution and at http://www.antilatency.com/eula
+// You may not use this file except in compliance with the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,20 +19,19 @@ using Antilatency.DeviceNetwork;
 
 namespace Antilatency.Integration {
     /// <summary>
-    /// Bracer basic implementation.
+    /// Bracer sample implementation.
     /// </summary>
     public class Bracer : BracerComponent {
         [System.Serializable]
         public class BracerTouchEvent : UnityEngine.Events.UnityEvent<BracerTouchState> { }
 
+        public float VibrationDuration = 1.0f;
+        public float VibrationIntensity = 1.0f;
+
         /// <summary>
         /// Only bracer marked with corresponding tag will be used by this component.
         /// </summary>
         public string BracerTag = "";
-
-        /// <summary>
-        /// </summary>
-        public uint TouchSensivity = 700;
 
         /// <summary>
         /// Is bracer touchpad currently pressed or released.
@@ -68,18 +78,18 @@ namespace Antilatency.Integration {
         protected override void Update() {
             base.Update();
 
-            uint touchValue;
-            if (!GetBracerTouchValue(out touchValue)) {
+            float touchValue;
+            if (!GetTouch(out touchValue)) {
                 return;
             }
 
-            if (touchValue < TouchSensivity && !_touchPressed) {
-                ExecuteVibrarion();
+            if (touchValue > 0.6f && !_touchPressed) {
+                ExecuteVibrarion(new Antilatency.Bracer.Vibration[] { new Antilatency.Bracer.Vibration{ duration = VibrationDuration, intensity = VibrationIntensity } });
                 _touchPressed = true;
                 BracerTouch.Invoke(BracerTouchState.Pressed);
             }
-            if (touchValue > TouchSensivity && _touchPressed) {
-                ExecuteVibrarion();
+            if (touchValue < 0.6f && _touchPressed) {
+                ExecuteVibrarion(new Antilatency.Bracer.Vibration[] { new Antilatency.Bracer.Vibration { duration = VibrationDuration, intensity = VibrationIntensity } });
                 _touchPressed = false;
                 BracerTouch.Invoke(BracerTouchState.Released);
             }

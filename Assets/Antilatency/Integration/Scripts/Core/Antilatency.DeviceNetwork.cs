@@ -1,3 +1,13 @@
+//Copyright 2020, ALT LLC. All Rights Reserved.
+//This file is part of Antilatency SDK.
+//It is subject to the license terms in the LICENSE file found in the top-level directory
+//of this distribution and at http://www.antilatency.com/eula
+//You may not use this file except in compliance with the License.
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
 #pragma warning disable IDE1006 // Do not warn about naming style violations
 #pragma warning disable IDE0017 // Do not suggest to simplify object initialization
 using System.Runtime.InteropServices; //GuidAttribute
@@ -25,7 +35,9 @@ public partial struct UsbVendorId {
 [System.Serializable]
 [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
 public partial struct UsbDeviceType {
+	/// <summary>USB device vendor ID. Default value for Antilatency devices is 0x3237</summary>
 	public Antilatency.DeviceNetwork.UsbVendorId vid;
+	/// <summary>USB device product ID. Default value for Antilatency Sockets is 0x0000</summary>
 	public ushort pid;
 }
 
@@ -181,8 +193,8 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public ISynchronousConnectionRemap() { }
-		public ISynchronousConnectionRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public ISynchronousConnectionRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
@@ -239,8 +251,8 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public ICotaskRemap() { }
-		public ICotaskRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public ICotaskRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
@@ -403,8 +415,8 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public IPropertyCotaskRemap() { }
-		public IPropertyCotaskRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public IPropertyCotaskRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
@@ -773,8 +785,8 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public INetworkRemap() { }
-		public INetworkRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public INetworkRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
@@ -919,8 +931,8 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public ILibraryRemap() { }
-		public ILibraryRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public ILibraryRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }
@@ -1003,8 +1015,68 @@ namespace Details {
 			buffer.Add(vmt);
 		}
 		public ICotaskConstructorRemap() { }
-		public ICotaskConstructorRemap(System.IntPtr context) {
-			AllocateNativeInterface(NativeVmt.Handle, context);
+		public ICotaskConstructorRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
+		}
+	}
+}
+
+[Guid("1f3f7579-813e-4528-82f9-5a5fc35a9295")]
+public interface ICotaskBatteryPowered : Antilatency.DeviceNetwork.ICotask {
+	/// <summary>Get actual battery level.</summary>
+	/// <returns>Battery level in range 0 .. 1. Value 0 - empty battery, value 1 - full battery.</returns>
+	float getBatteryLevel();
+}
+namespace Details {
+	public class ICotaskBatteryPoweredWrapper : Antilatency.DeviceNetwork.Details.ICotaskWrapper, ICotaskBatteryPowered {
+		private ICotaskBatteryPoweredRemap.VMT _VMT = new ICotaskBatteryPoweredRemap.VMT();
+		protected new int GetTotalNativeMethodsCount() {
+		    return base.GetTotalNativeMethodsCount() + typeof(ICotaskBatteryPoweredRemap.VMT).GetFields().Length;
+		}
+		public ICotaskBatteryPoweredWrapper(System.IntPtr obj) : base(obj) {
+		    _VMT = LoadVMT<ICotaskBatteryPoweredRemap.VMT>(base.GetTotalNativeMethodsCount());
+		}
+		public float getBatteryLevel() {
+			float result;
+			float resultMarshaler;
+			HandleExceptionCode(_VMT.getBatteryLevel(_object, out resultMarshaler));
+			result = resultMarshaler;
+			return result;
+		}
+	}
+	public class ICotaskBatteryPoweredRemap : Antilatency.DeviceNetwork.Details.ICotaskRemap {
+		public new struct VMT {
+			public delegate Antilatency.InterfaceContract.ExceptionCode getBatteryLevelDelegate(System.IntPtr _this, out float result);
+			#pragma warning disable 0649
+			public getBatteryLevelDelegate getBatteryLevel;
+			#pragma warning restore 0649
+		}
+		public new static readonly NativeInterfaceVmt NativeVmt;
+		static ICotaskBatteryPoweredRemap() {
+			var vmtBlocks = new System.Collections.Generic.List<object>();
+			AppendVmt(vmtBlocks);
+			NativeVmt = new NativeInterfaceVmt(vmtBlocks);
+		}
+		protected static new void AppendVmt(System.Collections.Generic.List<object> buffer) {
+			Antilatency.DeviceNetwork.Details.ICotaskRemap.AppendVmt(buffer);
+			var vmt = new VMT();
+			vmt.getBatteryLevel = (System.IntPtr _this, out float result) => {
+				try {
+					var obj = GetContext(_this) as ICotaskBatteryPowered;
+					var resultMarshaler = obj.getBatteryLevel();
+					result = resultMarshaler;
+				}
+				catch (System.Exception ex) {
+					result = default(float);
+					return handleRemapException(ex, _this);
+				}
+				return Antilatency.InterfaceContract.ExceptionCode.Ok;
+			};
+			buffer.Add(vmt);
+		}
+		public ICotaskBatteryPoweredRemap() { }
+		public ICotaskBatteryPoweredRemap(System.IntPtr context, ushort lifetimeId) {
+			AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
 		}
 	}
 }

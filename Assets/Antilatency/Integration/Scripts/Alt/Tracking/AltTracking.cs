@@ -1,4 +1,15 @@
-﻿using System;
+﻿// Copyright 2020, ALT LLC. All Rights Reserved.
+// This file is part of Antilatency SDK.
+// It is subject to the license terms in the LICENSE file found in the top-level directory
+// of this distribution and at http://www.antilatency.com/eula
+// You may not use this file except in compliance with the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
 using System.Runtime.InteropServices;
 using System.Collections;
 using System.Collections.Generic;
@@ -61,7 +72,7 @@ namespace Antilatency.Integration {
         /// </summary>
         protected NodeHandle _trackingNode;
 
-        private Alt.Tracking.ICotask _trackingCotask;
+        private Alt.Tracking.ITrackingCotask _trackingCotask;
 
         /// <summary>
         /// This method is used to call the initialization function.
@@ -203,7 +214,7 @@ namespace Antilatency.Integration {
 
             _placement = GetPlacement();
 
-            using (var cotaskConstructor = _trackingLibrary.getTrackingConstructor()) {
+            using (var cotaskConstructor = _trackingLibrary.createTrackingCotaskConstructor()) {
                 _trackingCotask = cotaskConstructor.startTask(network, node, nativeEnvironment);
 
                 if (_trackingCotask == null) {
@@ -223,13 +234,13 @@ namespace Antilatency.Integration {
         /// </summary>
         /// <param name="state"> [out] result tracking state.</param>
         /// <returns>True if tracking is running, otherwise false.</returns>
-        protected bool GetRawTrackingState(out Antilatency.Alt.Tracking.State state) {
+        public bool GetRawTrackingState(out Antilatency.Alt.Tracking.State state) {
             state = new Antilatency.Alt.Tracking.State();
             if (_trackingCotask == null) {
                 return false;
             }
 
-            state = _trackingCotask.getState();
+            state = _trackingCotask.getState(Antilatency.Alt.Tracking.Constants.DefaultAngularVelocityAvgTime);
             return true;
         }
 
@@ -238,7 +249,7 @@ namespace Antilatency.Integration {
         /// </summary>
         /// <param name="state"> [out] result tracking state.</param>
         /// <returns>True if tracking is running, otherwise false.</returns>
-        protected bool GetTrackingState(out Antilatency.Alt.Tracking.State state) {
+        public bool GetTrackingState(out Antilatency.Alt.Tracking.State state) {
             state = new Antilatency.Alt.Tracking.State();
             if (_trackingCotask == null) {
                 return false;
@@ -285,7 +296,7 @@ namespace Antilatency.Integration {
                 return new NodeHandle[0];
             }
 
-            using (var cotaskConstructor = _trackingLibrary.getTrackingConstructor()) {
+            using (var cotaskConstructor = _trackingLibrary.createTrackingCotaskConstructor()) {
                 var nodes = cotaskConstructor.findSupportedNodes(nativeNetwork).Where(v =>
                         nativeNetwork.nodeGetStatus(v) == NodeStatus.Idle
                     ).ToArray();
@@ -317,7 +328,7 @@ namespace Antilatency.Integration {
                 return new NodeHandle[0];
             }
 
-            using (var cotaskConstructor = _trackingLibrary.getTrackingConstructor()) {
+            using (var cotaskConstructor = _trackingLibrary.createTrackingCotaskConstructor()) {
                 var nodes = cotaskConstructor.findSupportedNodes(nativeNetwork).Where(v =>
                         nativeNetwork.nodeGetParent(nativeNetwork.nodeGetParent(v)) == Antilatency.DeviceNetwork.NodeHandle.Null &&
                         nativeNetwork.nodeGetStatus(v) == NodeStatus.Idle
@@ -353,7 +364,7 @@ namespace Antilatency.Integration {
                 return new NodeHandle[0];
             }
 
-            using (var cotaskConstructor = _trackingLibrary.getTrackingConstructor()) {
+            using (var cotaskConstructor = _trackingLibrary.createTrackingCotaskConstructor()) {
                 var nodes = cotaskConstructor.findSupportedNodes(nativeNetwork).Where(v =>
                         nativeNetwork.nodeGetStringProperty(nativeNetwork.nodeGetParent(v), "Tag") == socketTag &&
                         nativeNetwork.nodeGetStatus(v) == NodeStatus.Idle

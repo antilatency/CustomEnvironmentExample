@@ -1,4 +1,15 @@
-﻿using System.Collections;
+﻿// Copyright 2020, ALT LLC. All Rights Reserved.
+// This file is part of Antilatency SDK.
+// It is subject to the license terms in the LICENSE file found in the top-level directory
+// of this distribution and at http://www.antilatency.com/eula
+// You may not use this file except in compliance with the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -181,14 +192,14 @@ namespace Antilatency.Integration {
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        protected bool GetBracerTouchValue(out uint value) {
-            value = 0;
+        protected bool GetTouch(out float value) {
+            value = 0.0f;
 
             if (_bracerCotask == null) {
                 return false;
             }
             
-            value = _bracerCotask.getTouchNativeValue();
+            value = _bracerCotask.getTouch(0);
             return true;
         }
 
@@ -196,12 +207,12 @@ namespace Antilatency.Integration {
         /// 
         /// </summary>
         /// <returns></returns>
-        protected bool ExecuteVibrarion() {
+        protected bool ExecuteVibrarion(Antilatency.Bracer.Vibration[] vibrations) {
             if (_bracerCotask == null) {
                 return false;
             }
 
-            _bracerCotask.executeVibration();
+            _bracerCotask.executeVibrationSequence(vibrations);
             return true;
         }
 

@@ -1204,8 +1204,9 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: Antilatency.Integration.BracerComponent+BracerStateEvent, Antilatency.Integration,
       Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  VibrationDuration: 0.25
+  VibrationIntensity: 1
   BracerTag: LeftHand
-  TouchSensivity: 700
   BracerTouch:
     m_PersistentCalls:
       m_Calls: []
@@ -1281,8 +1282,9 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: Antilatency.Integration.BracerComponent+BracerStateEvent, Antilatency.Integration,
       Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  VibrationDuration: 0.25
+  VibrationIntensity: 1
   BracerTag: RightHand
-  TouchSensivity: 700
   BracerTouch:
     m_PersistentCalls:
       m_Calls: []

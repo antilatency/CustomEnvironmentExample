@@ -1,3 +1,28 @@
+// Copyright (c) 2019 ALT LLC
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of source code located below and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//  
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//  
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+//Unity & Mono fix
+#if ENABLE_IL2CPP && !__MonoCS__
+    #define __MonoCS__
+#endif
+
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -5,6 +30,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.Reflection;
+
+#if __MonoCS__
+using AOT;
+#endif
 
 namespace Antilatency {
     public static class Utils {
@@ -140,6 +169,13 @@ namespace Antilatency.InterfaceContract {
                 var tmp = _object;
                 _object = IntPtr.Zero;
                 return tmp;
+            }
+			
+			public void Attach(IntPtr vmt) {
+                if(_object != IntPtr.Zero) {
+                    throw new System.Exception("Cannot attach pointer to wrapper in not-detached state");
+                }
+                _object = vmt;
             }
 
             public static implicit operator bool(IUnsafeWrapper obj) {
@@ -327,19 +363,20 @@ namespace Antilatency.InterfaceContract {
                 var vmt = new VMT();
                 vmt.QueryInterface = (IntPtr _this, ref Guid guid, out IntPtr result) => {
                     var obj = Antilatency.InterfaceContract.Details.IInterfaceRemap.GetContext(_this) as InterfacedObject;
-                    return obj.QueryInterface(ref guid, out result);
+                    var lifetimeId = Antilatency.InterfaceContract.Details.IInterfaceRemap.GetLifetimeID(_this);
+                    return Antilatency.InterfaceContract.InterfacedObject.LifetimeControlAccess.QueryLifetimeInterfaceByArrayId(obj, (ushort)lifetimeId, ref guid, out result);
                 };
                 buffer.Add(vmt);
             }
 
-            protected void AllocateNativeInterface(System.IntPtr vmt, System.IntPtr context) {
+            protected void AllocateNativeInterface(System.IntPtr vmt, System.IntPtr context, ushort lifetimeId) {
                 _handle = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Data)));
-                var data = new Data() { Vmt = vmt, Context = context, LifetimeId = new IntPtr(DefaultLifetimeArrayID) };
+                var data = new Data() { Vmt = vmt, Context = context, LifetimeId = new IntPtr(lifetimeId) };
                 Marshal.StructureToPtr(data, _handle, false);
             }
 
-            public IUnsafeRemap(System.IntPtr context) {
-                AllocateNativeInterface(NativeVmt.Handle, context);
+            public IUnsafeRemap(System.IntPtr context, ushort lifetimeId) {
+                AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
             }
 
             protected static ExceptionCode handleRemapException(System.Exception ex, IntPtr objPtr) {
@@ -485,8 +522,8 @@ namespace Antilatency.InterfaceContract {
             }
 
             public IInterfaceRemap() { }
-            public IInterfaceRemap(System.IntPtr context) {
-                AllocateNativeInterface(NativeVmt.Handle, context);
+            public IInterfaceRemap(System.IntPtr context, ushort lifetimeId) {
+                AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
             }
         }
     }
@@ -560,8 +597,8 @@ namespace Antilatency.InterfaceContract {
                 buffer.Add(vmt);
             }
             public IExceptionDataRemap() { }
-            public IExceptionDataRemap(System.IntPtr context) {
-                AllocateNativeInterface(NativeVmt.Handle, context);
+            public IExceptionDataRemap(System.IntPtr context, ushort lifetimeId) {
+                AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
             }
         }
     }
@@ -578,12 +615,13 @@ namespace Antilatency.InterfaceContract {
     }
 
     public abstract class InterfacedObject : IInterface, IExceptionData {
-        private Dictionary<Guid, Details.IUnsafeRemap> _interfaces = new Dictionary<Guid, Details.IUnsafeRemap>();
+        
         private static Dictionary<IntPtr, InterfacedObject> _trackedObjects = new Dictionary<IntPtr, InterfacedObject>();
 
-        private struct LifetimeController {
+        private class LifetimeController {
             public ushort LifetimeID;
             public int Refcount;
+            public Dictionary<Guid, Details.IUnsafeRemap> Interfaces = new Dictionary<Guid, Details.IUnsafeRemap>();
         }
 
         private LifetimeController[] _lifetimeControllers;
@@ -596,9 +634,6 @@ namespace Antilatency.InterfaceContract {
         private GCHandle _thisHandle;
 
         public class LifetimeControlAccess {
-            public static int DefaultLifetimeArrayID {
-                get { return -1; }
-            }
             public static uint AddRefLifetime(InterfacedObject obj, int lifetimeId) {
                 return obj.AddRefLifetime(lifetimeId);
             }
@@ -606,31 +641,28 @@ namespace Antilatency.InterfaceContract {
             public static uint ReleaseLifetime(InterfacedObject obj, int lifetimeId) {
                 return obj.ReleaseLifetime(lifetimeId);
             }
+
+            public static ExceptionCode QueryLifetimeInterfaceByArrayId(InterfacedObject obj, ushort lifetimeArrayIndex, ref Guid guid, out IntPtr result) {
+                return obj.QueryLifetimeInterfaceByArrayId(lifetimeArrayIndex, ref guid, out result);
+            }
         }
 
         protected virtual void PartialDestroy(int lifetimeId) { }
 
         private uint AddRefLifetime(int lifetimeArrayId) {
             uint result = AddRef();
-            if (lifetimeArrayId != LifetimeControlAccess.DefaultLifetimeArrayID) {
-                result = (uint)Interlocked.Increment(ref _lifetimeControllers[lifetimeArrayId].Refcount);
-            }
+            result = (uint)Interlocked.Increment(ref _lifetimeControllers[lifetimeArrayId].Refcount);
             return result;
         }
 
         private uint ReleaseLifetime(int lifetimeArrayId) {
-            if (lifetimeArrayId != LifetimeControlAccess.DefaultLifetimeArrayID) {
-                uint result = (uint)Interlocked.Decrement(ref _lifetimeControllers[lifetimeArrayId].Refcount);
-                if (result == 0) {
-                    PartialDestroy(_lifetimeControllers[lifetimeArrayId].LifetimeID);
-                }
-                Release();
-                return result;
-            } else {
-                return Release();
+            uint result = (uint)Interlocked.Decrement(ref _lifetimeControllers[lifetimeArrayId].Refcount);
+            if (result == 0) {
+                PartialDestroy(_lifetimeControllers[lifetimeArrayId].LifetimeID);
             }
+            Release();
+            return result;
         }
-
 
         public InterfacedObject() {
             _thisHandle = GCHandle.Alloc(this);
@@ -643,40 +675,59 @@ namespace Antilatency.InterfaceContract {
 
             List<LifetimeController> controllers = new List<LifetimeController>();
             foreach (var i in interfaces) {
+                //Implement interface if remap type exists
                 var remapType = Antilatency.InterfaceContract.Details.Utils.GetRemapType(i);
                 if (remapType != null) {
-                    var remap = Activator.CreateInstance(remapType, GCHandle.ToIntPtr(_thisHandle));
-                    _interfaces.Add(i.GUID, remap as Details.IUnsafeRemap);
+                   
 
-                    //Register lifetime controller
-                    var lifetime = lifetimeAttributes.Where(v => v.Interface == i).FirstOrDefault();
-                    if (lifetime != null) {
-                        int controllerArrayId = -1;
+                    //Find lifetime attribute for interface
+                    var lifetimeAttribute = lifetimeAttributes.Where(v => v.Interface == i).FirstOrDefault();
 
-                        //Find existing lifetime controller
-                        for (int c = 0; c < controllers.Count; ++c) {
-                            if (controllers[c].LifetimeID == lifetime.Id) {
-                                controllerArrayId = c;
-                                break;
-                            }
+                    ushort interfaceLifetimeId = lifetimeAttribute == null ? (ushort)0 : lifetimeAttribute.Id;
+
+                    //Create remap
+                    var remap = Activator.CreateInstance(remapType, GCHandle.ToIntPtr(_thisHandle), interfaceLifetimeId);
+
+                    //Find existing lifetime controller array index
+                    int controllerArrayId = -1; 
+                    for (int c = 0; c < controllers.Count; ++c) {
+                        if (controllers[c].LifetimeID == interfaceLifetimeId) {
+                            controllerArrayId = c;
+                            break;
                         }
-                        //Create lifetime controller if not exists
-                        if (controllerArrayId == -1) {
-                            controllerArrayId = controllers.Count;
-                            controllers.Add(new LifetimeController() { LifetimeID = lifetime.Id, Refcount = 0 });
-                        }
-
-                        //Set lifetime controller array id to remap
-                        Details.IUnsafeRemap.SetLifetimeID((remap as Details.IUnsafeRemap).Handle, (ushort)controllerArrayId);
                     }
+                    //Create lifetime controller if not exists
+                    if (controllerArrayId == -1) {
+                        controllerArrayId = controllers.Count;
+                        controllers.Add(new LifetimeController() { LifetimeID = interfaceLifetimeId, Refcount = 0 });
+                    }
+
+                    controllers[controllerArrayId].Interfaces.Add(i.GUID, remap as Details.IUnsafeRemap);
+
+                    //Set lifetime controller array id to remap
+                    Details.IUnsafeRemap.SetLifetimeID((remap as Details.IUnsafeRemap).Handle, (ushort)controllerArrayId);
+                    
                 }
             }
             _lifetimeControllers = controllers.ToArray();
         }
 
         public ExceptionCode QueryInterface(ref Guid guid, out IntPtr result) {
+            for(int i = 0; i < _lifetimeControllers.Length; ++i) {
+                var error = QueryLifetimeInterfaceByArrayId((ushort)i, ref guid, out result);
+                if(error == ExceptionCode.Ok) {
+                    return error;
+                }
+            }
+            result = System.IntPtr.Zero;
+            return ExceptionCode.NoInterface;
+        }
+
+        private ExceptionCode QueryLifetimeInterfaceByArrayId(ushort lifetimeArrayIndex, ref Guid guid, out IntPtr result) {
             Details.IUnsafeRemap remap;
-            _interfaces.TryGetValue(guid, out remap);
+
+            _lifetimeControllers[lifetimeArrayIndex].Interfaces.TryGetValue(guid, out remap);
+
             if (remap != null) {
                 if (remap is Details.IInterfaceRemap) {
                     (remap as Details.IInterfaceRemap).AddRef();
@@ -690,6 +741,28 @@ namespace Antilatency.InterfaceContract {
             return ExceptionCode.NoInterface;
         }
 
+        /// <summary>
+        /// Query interface by lifetime id (specified in LifetimeController attribute)
+        /// </summary>
+        /// <param name="lifetimeId">Lifetime ID</param>
+        /// <param name="guid">Interface GUID</param>
+        /// <param name="result">Result pointer to interface. Zero if interface not found</param>
+        /// <returns>Returns ExceptionCode.Ok if interface exists</returns>
+        private ExceptionCode QueryLifetimeInterface(int lifetimeId, ref Guid guid, out IntPtr result) {
+            for(int i = 0; i < _lifetimeControllers.Length; ++i) {
+                if(_lifetimeControllers[i].LifetimeID == lifetimeId) {
+                    return QueryLifetimeInterfaceByArrayId((ushort)i, ref guid, out result);
+                }
+            }
+            result = IntPtr.Zero;
+            return ExceptionCode.NoInterface;
+        }
+
+        /// <summary>
+        /// Query interface (from first lifetime with specified interface)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public T QueryInterface<T>() where T : class, IUnsafe {
             var wrapperType = Details.Utils.GetWrapperType<T>();
             if (wrapperType == null) {
@@ -706,6 +779,33 @@ namespace Antilatency.InterfaceContract {
             return (T)Activator.CreateInstance(wrapperType, ptr);
         }
 
+        /// <summary>
+        /// Query interface by lifetime id (specified in LifetimeController attribute)
+        /// </summary>
+        /// <typeparam name="T">type of interface</typeparam>
+        /// <param name="lifetimeId">Lifetime ID</param>
+        /// <returns>Returns interface if exists, otherwise null</returns>
+        public T QueryLifetimeInterface<T>(int lifetimeId) where T : class, IUnsafe {
+            var wrapperType = Details.Utils.GetWrapperType<T>();
+            if (wrapperType == null) {
+                throw new Exception("Failed to find wrapper for interface " + typeof(T).FullName);
+            }
+
+            Guid guid = typeof(T).GUID;
+            IntPtr ptr = IntPtr.Zero;
+
+            for (int i = 0; i < _lifetimeControllers.Length; ++i) {
+                if (_lifetimeControllers[i].LifetimeID == lifetimeId) {
+                    if(QueryLifetimeInterface(i, ref guid, out ptr) == ExceptionCode.Ok) {
+                        return (T)Activator.CreateInstance(wrapperType, ptr);
+                    }
+                    break;
+                }
+            }
+
+            return null;
+        }
+
         public uint AddRef() {
             return (uint)Interlocked.Increment(ref _refCount);
         }
@@ -714,10 +814,13 @@ namespace Antilatency.InterfaceContract {
             var refs = Interlocked.Decrement(ref _refCount);
             if (refs == 0) {
                 Destroy();
-                foreach (var interfaceRemap in _interfaces) {
-                    interfaceRemap.Value.Dispose();
+                foreach(var c in _lifetimeControllers) {
+                    foreach (var interfaceRemap in c.Interfaces) {
+                        interfaceRemap.Value.Dispose();
+                    }
+                    c.Interfaces.Clear();
                 }
-                _interfaces.Clear();
+              
                 _trackedObjects.Remove(GCHandle.ToIntPtr(_thisHandle));
                 _thisHandle.Free();
 
@@ -793,8 +896,8 @@ namespace Antilatency.InterfaceContract {
             }
 
             public ILibraryUnloaderRemap() { }
-            public ILibraryUnloaderRemap(System.IntPtr context) {
-                AllocateNativeInterface(NativeVmt.Handle, context);
+            public ILibraryUnloaderRemap(System.IntPtr context, ushort lifetimeId) {
+                AllocateNativeInterface(NativeVmt.Handle, context, lifetimeId);
             }
         }
 
@@ -908,8 +1011,17 @@ namespace Antilatency.InterfaceContract {
             }
         };
 
-        public class ArrayOutMarshaler {
+   
+        public abstract class ArrayOutMarshaler {
             public delegate IntPtr setArraySizeDelegate(IntPtr context, uint newSize);
+            #if __MonoCS__
+            [MonoPInvokeCallback(typeof(setArraySizeDelegate))]
+            #endif
+            public static IntPtr SetArraySize(IntPtr context, uint newSize) {
+                var accessorHandle = GCHandle.FromIntPtr(context);
+                var accessor = (ArrayOutMarshaler)accessorHandle.Target;
+                return accessor.ResizeBuffer(newSize);
+            }
 
             public struct Intermediate {
                 public IntPtr context;
@@ -931,6 +1043,8 @@ namespace Antilatency.InterfaceContract {
             }
             public Intermediate intermediate;
 
+            public abstract IntPtr ResizeBuffer(uint newSize);
+
             public static ArrayOutMarshalerImpl<T> create<T>() {
                 return new ArrayOutMarshalerImpl<T>();
             }
@@ -940,6 +1054,7 @@ namespace Antilatency.InterfaceContract {
             }
         }
 
+
         public class ArrayOutMarshalerImpl<T> : ArrayOutMarshaler {
             protected T[] _buffer;
             public T[] value {
@@ -948,25 +1063,25 @@ namespace Antilatency.InterfaceContract {
             private GCHandle _arrayHandle;
             private GCHandle _thisHandle;
 
-            public static setArraySizeDelegate setArraySize = (IntPtr context, uint newSize) => {
-                var accessorHandle = GCHandle.FromIntPtr(context);
-                var accessor = (ArrayOutMarshalerImpl<T>)accessorHandle.Target;
-
-                Array.Resize<T>(ref accessor._buffer, (int)newSize);
+            public override IntPtr ResizeBuffer(uint newSize) {
+                Array.Resize(ref _buffer, (int)newSize);
 
                 if (newSize == 0) {
                     return IntPtr.Zero;
                 }
 
-                accessor._arrayHandle = GCHandle.Alloc(accessor._buffer, GCHandleType.Pinned);
-                return accessor._arrayHandle.AddrOfPinnedObject();
-            };
+                _arrayHandle = GCHandle.Alloc(_buffer, GCHandleType.Pinned);
+                return _arrayHandle.AddrOfPinnedObject();
+            }
+
+            
+
             public static implicit operator Intermediate(ArrayOutMarshalerImpl<T> marshaler) {
                 return marshaler.intermediate;
             }
             public ArrayOutMarshalerImpl() {
                 _thisHandle = GCHandle.Alloc(this);
-                intermediate = new Intermediate() { context = GCHandle.ToIntPtr(_thisHandle), setSizeCallback = setArraySize };
+                intermediate = new Intermediate() { context = GCHandle.ToIntPtr(_thisHandle), setSizeCallback = SetArraySize };
             }
             public void Dispose() {
                 if (_arrayHandle.IsAllocated) {
