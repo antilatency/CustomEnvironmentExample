@@ -1,14 +1,14 @@
-﻿using Antilatency.Integration;
+﻿using Antilatency.SDK;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
 public class ThreeMarkersEnvironmentComponent : AltEnvironmentComponent {
     public Transform MarkerA, MarkerB, MarkerC;
-    private Antilatency.Alt.Tracking.IEnvironment _environment = null;
+    private Antilatency.Alt.Environment.IEnvironment _environment = null;
     private ThreeMarkersEnvironment _customEnvironment = null;
 
-    public override Antilatency.Alt.Tracking.IEnvironment GetEnvironment() {
+    public override Antilatency.Alt.Environment.IEnvironment GetEnvironment() {
         if (_customEnvironment == null) {
             var markers = new List<Transform>{ MarkerA, MarkerB, MarkerC }
                 .Select(t => new Vector2(t.position.x, t.position.z))

@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Antilatency.Alt.Tracking;
+using Antilatency.Alt.Environment;
 using Antilatency.InterfaceContract;
 using UnityEngine;
 
 // A simplified, yet functional, example of custom environment which uses just three markers on the floor plane.
 // See CustomEnvironment.cs to learn the general idea how environments work.
-public class ThreeMarkersEnvironment : Antilatency.InterfaceContract.InterfacedObject, Antilatency.Alt.Tracking.IEnvironment {
+public class ThreeMarkersEnvironment : InterfacedObject, IEnvironment {
 
     // In this example we will find the best match by simply iterating all possible permutations of marker
     // indices. So, let's cache them for performance and brievity.

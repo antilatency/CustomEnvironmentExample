@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.antilatency.sdk": {
+      "version": "https://github.com/AntilatencySDK/Release_3.0.0.git#subset-6f913367bc4a908d25c1a73a6691cc3c41f9955d",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "227cd03586b38be3e98c469c80152a0adbb29cb7"
+    },
     "com.unity.collab-proxy": {
       "version": "1.2.16",
       "depth": 0,

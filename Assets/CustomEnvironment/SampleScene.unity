@@ -130,6 +130,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 114147377}
+  - component: {fileID: 114147378}
+  - component: {fileID: 114147379}
   m_Layer: 0
   m_Name: Environment
   m_TagString: Untagged
@@ -154,6 +156,34 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114147378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114147376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2b40cbd339276445b88ed5e8f3bc2aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MarkerA: {fileID: 383577242}
+  MarkerB: {fileID: 1933347962}
+  MarkerC: {fileID: 2024836639}
+--- !u!114 &114147379
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114147376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86366b8e543f97f469784e5293c8604d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Environment: {fileID: 114147378}
 --- !u!1 &341108222
 GameObject:
   m_ObjectHideFlags: 0
@@ -163,9 +193,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 341108226}
-  - component: {fileID: 341108225}
   - component: {fileID: 341108223}
-  - component: {fileID: 341108224}
   m_Layer: 0
   m_Name: AltRig
   m_TagString: Untagged
@@ -182,44 +210,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 341108222}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72c9faf7bb0877349abea9c15dcf4ac6, type: 3}
+  m_Script: {fileID: 11500000, guid: 9539745bec1b692458888298cebbdf82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Environment: {fileID: 341108224}
---- !u!114 &341108224
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341108222}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2b40cbd339276445b88ed5e8f3bc2aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MarkerA: {fileID: 383577242}
-  MarkerB: {fileID: 1933347962}
-  MarkerC: {fileID: 2024836639}
---- !u!114 &341108225
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341108222}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b545510daf5beea4eaf019692b1dd7fe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SupportedDeviceTypes:
-  - vid:
-      value: 769
-    pid: 0
+  SupportedUsbDeviceTypes:
   - vid:
       value: 12855
     pid: 0
+    pidMask: 0
+  SupportedIpDevices: []
   DeviceNetworkChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -323,11 +322,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1906503480}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4415948ffb9aef42a3fbde36c574b0c, type: 3}
+  m_Script: {fileID: 11500000, guid: 42cf21756043026438e02b5cbef789ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Network: {fileID: 341108225}
-  Environment: {fileID: 341108224}
+  Network: {fileID: 341108223}
+  Environment: {fileID: 114147378}
   ExtrapolationTime: 0
   TrackingTaskStateChanged:
     m_PersistentCalls:

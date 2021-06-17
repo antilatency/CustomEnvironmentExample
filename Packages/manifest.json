@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.antilatency.sdk": "https://github.com/AntilatencySDK/Release_3.0.0.git#subset-6f913367bc4a908d25c1a73a6691cc3c41f9955d",
     "com.unity.collab-proxy": "1.2.16",
     "com.unity.ext.nunit": "1.0.6",
     "com.unity.ide.rider": "1.2.1",

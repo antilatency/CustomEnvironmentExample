@@ -1,11 +1,11 @@
 ﻿using System.Linq;
-using Antilatency.Alt.Tracking;
+using Antilatency.Alt.Environment;
 using Antilatency.InterfaceContract;
 using UnityEngine;
 
 // This is stub class to illustrate and document the operation principles of custom environments.
 // See ThreeMarkersEnvironment for a functional example.
-public class CustomEnvironment : Antilatency.InterfaceContract.InterfacedObject, Antilatency.Alt.Tracking.IEnvironment {
+public class CustomEnvironment : InterfacedObject, IEnvironment {
 
     protected override void Destroy() {
         // Each interfaced object has internal reference counter to track its lifetime (it's designed to coexist
